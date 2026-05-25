@@ -7,17 +7,39 @@
 
 ## 1. 启动行为：先加载记忆与技能
 
-Agent 启动后，**先按顺序读取**以下目录（若文件存在）：
+Agent 启动后，**先按顺序读取**以下文件（若存在），加载顺序的详细版本见 `docs/memory/CURSOR_AGENT_MEMORY.md`：
 
-1. `docs/memory/CURSOR_AGENT_MEMORY.md` —— 总入口 / 索引
-2. `docs/memory/编程手册与纪律.md` —— 编程纪律（强约束）
-3. `docs/memory/MEMORY.md` —— 项目长期记忆
-4. `docs/skills/*.md` —— 通用技能（safe-edit、verify-before-answer 等）
-5. 任务相关的 `docs/memory/project_*.md` / `reference_*.md` / `feedback_*.md`
+1. **`docs/memory/CURSOR_AGENT_MEMORY.md`** —— 总入口 / 索引（**必读**）
+2. **编程纪律 / 安全协作规约**（顺序读）：
+   - `docs/skills/safe-collab-workflow/SKILL.md`
+   - `docs/skills/verify-before-answer/SKILL.md`
+   - `docs/skills/understand-first/SKILL.md`
+   - `docs/skills/backup-and-edit/SKILL.md`
+   - `docs/skills/safe-restore/SKILL.md`
+3. **GBK / 嵌入式**（任务涉及 GBK/GB2312/Keil/HMI/嵌入式 C 时必读）：
+   - `docs/skills/safe-edit-gbk/SKILL.md`
+   - `docs/skills/embedded-c-safe-edit/SKILL.md`
+   - `docs/skills/gbk-garbled-comments/SKILL.md`
+   - `docs/skills/fix-braces/SKILL.md`
+   - `docs/skills/keil5-embedded-c/SKILL.md`
+   - `docs/memory/feedback_gbk_file_modification.md`
+4. **跨电脑同步**（涉及 "上传" / 工具集合并时）：
+   - `docs/skills/external-record-continuity/SKILL.md`
+   - `docs/skills/multi-computer-toolkit-merge/SKILL.md`
+   - `docs/skills/work-continuity-sync/SKILL.md`
+5. **任务相关 project / reference / feedback** 文件（按需）
 
-若上述文件**不存在**，跳过即可，**不要伪造内容**。
+文件**不存在**就跳过，**不要伪造内容**。
 
-> 用户说 “恢复记忆” / “restore memory” 时，依次重读 1 → 4，并在回复中**明确告知已加载哪些文件**。
+> 用户说 "恢复记忆" / "restore memory" 时，依次重读 1 → 5，并在回复里**明确告知已加载哪些文件**。
+
+### Skills / Memory 的上游真源
+
+`docs/skills/` 和 `docs/memory/` 下大部分内容**镜像自**：
+
+[`hudonghua/codex-personal-toolkit`](https://github.com/hudonghua/codex-personal-toolkit)
+
+那是用户的 Codex Personal Toolkit，跨多台电脑 (`t250c` / `DELL` 等) 同步技能与工作状态。本仓库只镜像与本仓库工作相关的部分。上游更新后，按 `docs/memory/CURSOR_AGENT_MEMORY.md` §4 的流程同步。
 
 ---
 
