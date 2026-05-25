@@ -11,10 +11,16 @@
                      │ 你本地脚本 / Cursor Autofetch 自动拉
                      ▼
               你的 Windows 仓库
-                （文件就出现了）
+                │
+                │ install-skills-locally.ps1 （可选）
+                ▼
+          ~/.codex/skills, ~/.claude/skills, ~/.cursor/skills-cursor
+              （所有本地 Agent 跨项目都能用）
 ```
 
 云端这边 push + PR 全自动（见 `AGENTS.md`）。本地这边需要**一次性配置**下面任一方式即可。
+
+如果你不仅想让**本仓库内**的 Agent 知道这些 skill，还想让**所有本地 Agent（Codex CLI、Claude Code、Cursor 本地 Agent）跨项目都能用**，看下面的 [方案 D](#方案-d把-skills--memory-装到所有本地-agent-的全局目录)。
 
 ---
 
@@ -88,6 +94,86 @@ powershell -ExecutionPolicy Bypass -File .\scripts\install-auto-pull-task.ps1
 ```
 
 > 优点：开机即同步，体感最接近"无感"。缺点：要管理员权限注册一次。
+
+---
+
+---
+
+### 方案 D：把 skills + memory 装到所有本地 Agent 的**全局目录**
+
+让 `docs/skills/` 和 `docs/memory/` 不仅在本仓库内有效，还能被 **Codex CLI**、**Claude Code**、**Cursor 本地 Agent**（跨任意项目）直接读到。
+
+脚本：[`scripts/install-skills-locally.ps1`](./install-skills-locally.ps1)
+
+会把内容**非破坏性合并**到三个全局目录：
+
+| 目标 | Skills 写到 | Memory 写到 |
+| --- | --- | --- |
+| **Codex CLI** | `%USERPROFILE%\.codex\skills\` | `%USERPROFILE%\.codex\memory\` |
+| **Claude Code** | `%USERPROFILE%\.claude\skills\` | `%USERPROFILE%\.claude\projects\C--Users-<user>\memory\` |
+| **Cursor 本地 Agent** | `%USERPROFILE%\.cursor\skills-cursor\` | `%USERPROFILE%\.cursor\memory\` |
+
+#### 使用
+
+```powershell
+cd C:\path\to\your\repo
+
+# 1. 先 DRY-RUN 预览（不动磁盘，只打印将做什么）
+powershell -ExecutionPolicy Bypass -File .\scripts\install-skills-locally.ps1
+
+# 2. 看过没问题，再真正安装
+powershell -ExecutionPolicy Bypass -File .\scripts\install-skills-locally.ps1 -Apply
+
+# 3. 只装某一两个目标
+.\scripts\install-skills-locally.ps1 -Apply -Targets Codex,Claude
+
+# 4. 跳过 memory，只装 skills
+.\scripts\install-skills-locally.ps1 -Apply -SkipMemory
+
+# 5. 同名且内容不同时强制覆盖（仍会保留 .incoming-<ts> 备份）
+.\scripts\install-skills-locally.ps1 -Apply -Force
+```
+
+> **默认是 DRY-RUN**——你跑第一次只会看到预览，**不会动你的本地文件**。确认后再加 `-Apply` 才真正写入。
+
+#### 合并规则（非破坏性）
+
+| 情况 | 默认行为 | `-Force` 行为 |
+| --- | --- | --- |
+| 目标不存在 | ✅ 新增 | ✅ 新增 |
+| 目标存在 + 内容一致 | ⏭ 跳过 | ⏭ 跳过 |
+| 目标存在 + 内容不同 | 🟡 **保留本地**，源文件存为 `<name>.incoming-<ts>.md` | 🟡 覆盖本地，**先备份旧内容到** `<name>.incoming-<ts>.md` |
+
+任何情况下都**不会删除本地文件**，**不会无声覆盖**。
+
+#### 报告
+
+每次 `-Apply` 运行后会写一份合并报告到：
+
+```
+<repo>/merge-reports/install-skills-locally-YYYYMMDD-HHMMSS.md
+```
+
+里面有所有 added / updated / kept-local / unchanged 文件的明细。
+
+> `merge-reports/` 已被 `.gitignore` 忽略，是本地产物，不会污染仓库。
+
+#### 推荐工作流
+
+```
+1. 一次性：拉仓库 → 跑 install-auto-pull-task.ps1（方案 C）+ install-skills-locally.ps1 -Apply（方案 D）
+2. 之后：
+   - 我（云端 Agent）改 skill / 改 memory → push 到 GitHub
+   - 你本地分钟级自动 git pull（方案 C）
+   - 想把新 skill 立刻同步到全局 Agent 目录 → 再跑一次 install-skills-locally.ps1 -Apply
+```
+
+#### 卸载
+
+脚本只是复制文件，不创建注册项。**想撤回**：
+
+- 删除目标目录里你不想要的 `.md` 即可。
+- 用 `.incoming-<ts>.md` 恢复被覆盖的旧版本：手动改名回去。
 
 ---
 
